@@ -1,0 +1,76 @@
+---
+title: "Report"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+
+src_url = "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+data = read.csv(src_url)
+```
+
+## Intentions
+The purpose of the analysis is to get a general idea of the timing of these incidents and where they took place most frequently.
+
+
+## Data transformations and initial summary
+
+```{r transform, echo=TRUE}
+data = select(data, c("OCCUR_DATE", "OCCUR_TIME", "BORO", "LOCATION_DESC"))
+
+data$OCCUR_DATETIME = str_c(data$OCCUR_DATE, " ", data$OCCUR_TIME)
+data = select(data, -c("OCCUR_DATE", "OCCUR_TIME"))
+data$OCCUR_DATETIME = strptime(data$OCCUR_DATETIME, "%m/%d/%Y %H:%M:%S")
+#data$OCCUR_DATETIME$zone = NULL
+
+data$BORO = as.factor(data$BORO)
+data$LOCATION_DESC = as.factor(data$LOCATION_DESC)
+data$LOCATION_DESC[data$LOCATION_DESC == ""] = NA
+```
+
+```{r summary, echo=FALSE}
+summary(data)
+```
+
+This filtered data contains the location, district and exact time (if available) of the shooting incidents between 2006 and 2021, collected by the NYPD.
+
+## Timing of incitents
+
+```{r vis2, echo=FALSE}
+barplot(table(data$OCCUR_DATETIME$hour))
+```
+
+We can clearly see that most incidents occurred during the late afternoon and evening hours, while the mornings are relatively safer, which is not that surprising.
+
+```{r vis1, echo=FALSE}
+barplot(table(data$OCCUR_DATETIME$year + 1900))
+```
+
+It looks like the amount of shooting incidents were on a decline, but right around when COVID started spread around the globe, the number of incidents almost doubled and the downward trend seems to be missing since then. This is a clear correlation between the pandemic and the amount shooting incidents.
+I suspect that the amount of shooting incidents per year will stagnate while the pandemic is still ongoing and may start to decrease following that.
+
+## Incident placements
+
+```{r destricts, echo=FALSE}
+pie(table(data$BORO))
+```
+
+Most people would say that Queens is the most dangerous, but turns out Brooklyn is where the most recorded shooting incidents happened.
+
+```{r placemets, echo=FALSE}
+sort(table(data$LOCATION_DESC), decreasing=TRUE)
+```
+
+It seams that most of the shootings occur in places where lots of people live close together like public houses and apartment buildings.
+
+### Session information
+
+```{r session_info, echo=FALSE}
+s = sessionInfo()
+print(s, locale=FALSE)
+```
